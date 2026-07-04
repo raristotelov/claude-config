@@ -1,0 +1,6 @@
+{
+  "name": "dev-workflows",
+  "version": "0.1.0",
+  "description": "Multi-agent development workflows over a shared pool of specialist agents. Orchestrator skills chain the agents; each skill is one workflow.",
+  "author": { "name": "Radostin Aristotelov" }
+}

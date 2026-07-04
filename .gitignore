@@ -1,0 +1,21 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Secrets — never commit MCP tokens or auth
+.mcp.local.json
+*.local.json
+.env
+.env.*
+.credentials.json
+
+# Runtime / logs
+*.log
+
+# Per-run manifest state (not config). Commit manifest.example.json instead.
+.workflow/
