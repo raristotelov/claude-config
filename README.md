@@ -1,59 +1,71 @@
-# claude-marketplace
+# claude-config
 
-Personal Claude Code marketplace — agentic workflows and shared agents for
-full-stack development. One repo, one plugin (`dev-workflows`), many orchestrator
-skills over a shared agent pool.
+My global Claude Code configuration — one source of truth, applied to any
+machine. Ships `CLAUDE.md`, `settings.json`, agents, workflow skills, and the
+peon-ping sound config.
 
-## Install (per machine)
+## New machine (one-time)
 
-```
-/plugin marketplace add raristotelov/claude-marketplace
-/plugin install dev-workflows@claude-marketplace
-/reload-plugins
-```
-
-Works the same on macOS and Linux (global scope). On Windows, run inside WSL2.
-
-## Update after pushing changes
-
-Auto-update is unreliable, so update manually. After you push edits to this repo:
-
-```
-/plugin marketplace update claude-marketplace
-/reload-plugins
+```bash
+git clone git@github.com:raristotelov/claude-config.git ~/.claude-config
+~/.claude-config/claude-sync.sh bootstrap
 ```
 
-Bump the `version` in **both** `plugins/dev-workflows/.claude-plugin/plugin.json`
-and `.claude-plugin/marketplace.json` on each meaningful change — the version
-comparison is what triggers the update.
+That clones the repo, copies everything into `~/.claude/`, rewrites the
+settings paths to this machine's home, and installs peon-ping if missing.
+Restart Claude Code after.
 
-If it still reports "already at latest" (a known cache bug), force a refresh:
+## Everyday use
 
+```bash
+~/.claude-config/claude-sync.sh sync        # pull latest + apply
+~/.claude-config/claude-sync.sh save "msg"  # push local ~/.claude edits back
 ```
-/plugin uninstall dev-workflows@claude-marketplace
-/plugin install dev-workflows@claude-marketplace
-/reload-plugins
+
+Optional convenience — wrap Claude so it syncs automatically. Add to your
+shell rc (`~/.zshrc` / `~/.bashrc`):
+
+```bash
+claude() {
+  ~/.claude-config/claude-sync.sh sync >/dev/null 2>&1
+  command claude "$@"
+  ~/.claude-config/claude-sync.sh save >/dev/null 2>&1
+}
 ```
 
 ## What's inside
 
-See `plugins/dev-workflows/README.md` for the workflows and agents.
-
-## peon-ping (notification sounds)
-
-A `SessionStart` hook (`plugins/dev-workflows/hooks/peon-ping-install.sh`) checks
-for [peon-ping](https://www.peonping.com/) and installs it if missing (Homebrew
-or curl, once per machine). peon-ping is a separate tool with its own hooks that
-fire on the same Claude Code events these workflows use, so completion sounds
-just work. Delete the hook if you'd rather install it by hand.
-
-## Figma seat note
-
-The Figma-to-page workflow needs the Figma MCP connected with a Full seat for
-write-to-canvas (Dev seat = drafts only). Run the Figma `whoami` tool to confirm
-your seat.
+```
+CLAUDE.md                 Global rules (loaded every session)
+settings.json             Hooks + config (paths use __CLAUDE_HOME__ placeholder)
+agents/                   senior-architect-planner, product-docs-manager,
+                          senior-developer, qa-engineer, code-reviewer
+skills/                   design-to-page, feature-from-spec, design-generation
+hooks/peon-ping-config.json   Bundled peon-ping settings (peon pack, vol 0.5)
+claude-sync.sh            bootstrap | sync | save
+```
 
 ## Notes
 
-- MCP auth (Figma etc.) is per-machine OAuth — nothing sensitive is stored in
-  this repo. Don't commit tokens; see `.gitignore`.
+- The repo is the source of truth. `~/.claude/` is where it gets applied — it is
+  NOT a git repo itself, so you never clone or pull inside it.
+- `settings.json` stores paths as `__CLAUDE_HOME__`; the sync script swaps this
+  for the real home on apply, and back to the placeholder on save. This is what
+  makes it portable across Mac (`/Users/...`) and Linux (`/home/...`).
+- peon-ping's runtime files (sounds, scripts) are NOT versioned — only your
+  config is. The installer provides the binaries; your config sets the pack.
+- Secrets and machine-specific state are gitignored. MCP auth (Figma etc.) is
+  per-machine OAuth and never stored here.
+- Agent memory is intentionally NOT in this repo (contains project-specific and
+  sensitive notes). It rebuilds per machine, or sync it via a separate private
+  repo if you want it to travel.
+
+## Workflows
+
+- `/design-to-page [page]` — Figma frame → spec → implement → test → review
+- `/feature-from-spec [feature]` — architect → spec → implement → test → review
+- `/design-generation` — design-phase playbook (records Figma node-ids)
+
+Known gap: `senior-developer` needs `mcp__figma__get_design_context` added to
+its tools for the Figma step. Agent memory paths inside the agent files are
+still hardcoded to `/home/ubuntu/...` — make portable before relying on memory.
