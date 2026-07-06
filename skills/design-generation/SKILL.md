@@ -25,6 +25,9 @@ the non-conversational stages that come after.
   `/dev-workflows:design-to-page <page-name>`.
 
 ## Don't
+- Don't wrap the design in browser chrome (Safari/Chrome toolbar, traffic-light
+  dots, URL bar, window frame). Design the page content only, starting at the
+  site's own navbar.
 - Don't implement code here — design only.
 - Don't put node-ids or run status in CLAUDE.md; that's runtime state. It lives
   in the spec or the manifest.

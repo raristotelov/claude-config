@@ -16,6 +16,8 @@
 set -euo pipefail
 
 # --- config -----------------------------------------------------------------
+REPO_URL="https://github.com/raristotelov/claude-config.git"
+# The repo is the directory this script sits in (override with CLAUDE_CONFIG_REPO).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${CLAUDE_CONFIG_REPO:-$SCRIPT_DIR}"
 CLAUDE_HOME="$HOME/.claude"
@@ -23,6 +25,13 @@ PLACEHOLDER="__CLAUDE_HOME__"
 
 # Files/dirs this repo owns and applies into ~/.claude:
 APPLY_ITEMS=("CLAUDE.md" "settings.json" "agents" "skills")
+
+# MCP servers to register at user scope (name|transport|url).
+# These are added via `claude mcp add` because Claude Code reads user-scope MCP
+# from ~/.claude.json, not settings.json. Auth is still one-time per machine.
+MCP_SERVERS=(
+  "figma|http|https://mcp.figma.com/mcp"
+)
 
 # --- helpers ----------------------------------------------------------------
 log() { printf '  %s\n' "$*"; }
@@ -81,12 +90,30 @@ ensure_peon() {
   fi
 }
 
+ensure_mcp() {
+  command -v claude >/dev/null 2>&1 || { log "claude CLI not found — skipping MCP"; return 0; }
+  local existing name transport url
+  existing="$(claude mcp list 2>/dev/null || true)"
+  for entry in "${MCP_SERVERS[@]}"; do
+    name="${entry%%|*}"
+    transport="${entry#*|}"; transport="${transport%%|*}"
+    url="${entry##*|}"
+    if printf '%s\n' "$existing" | grep -q "^${name}[:[:space:]]"; then
+      continue
+    fi
+    log "Registering MCP server: $name"
+    claude mcp add --scope user --transport "$transport" "$name" "$url" \
+      >/dev/null 2>&1 || log "MCP add failed for $name — add manually"
+  done
+}
+
 # --- commands ---------------------------------------------------------------
 cmd_bootstrap() {
   ensure_repo
   apply_files
   rewrite_paths
   ensure_peon
+  ensure_mcp
   log "Bootstrap complete. Restart Claude Code."
 }
 
@@ -97,6 +124,7 @@ cmd_sync() {
   apply_files
   rewrite_paths
   ensure_peon
+  ensure_mcp
   log "Sync complete."
 }
 
