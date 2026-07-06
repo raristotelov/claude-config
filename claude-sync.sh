@@ -16,8 +16,8 @@
 set -euo pipefail
 
 # --- config -----------------------------------------------------------------
-REPO_URL="git@github.com:raristotelov/claude-config.git"
-REPO_DIR="${CLAUDE_CONFIG_REPO:-$HOME/.claude-config}"   # where the repo lives
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="${CLAUDE_CONFIG_REPO:-$SCRIPT_DIR}"
 CLAUDE_HOME="$HOME/.claude"
 PLACEHOLDER="__CLAUDE_HOME__"
 
