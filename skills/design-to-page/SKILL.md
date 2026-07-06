@@ -1,54 +1,49 @@
 ---
 name: design-to-page
-description: "Orchestrates the Figma-to-page workflow. Trigger after the design phase to take approved Figma frames through spec, implementation, testing, and review. Invoke with /dev-workflows:design-to-page."
-argument-hint: "[page-or-section name]"
+description: "Automates the build-test-review stages of the Figma-to-page workflow. Trigger ONLY after the design and spec are done and you have approved them. Invoke with /design-to-page (optionally name the page/spec). Runs developer -> qa -> reviewer, gating each stage."
+argument-hint: "[page-or-spec name]"
 ---
 
 # Design-to-Page Orchestrator
 
-You are the orchestrator for turning approved Figma frames into shipped Next.js
-pages. You do NOT write specs, code, tests, or reviews yourself — you dispatch
-the specialist agents in order and gate each stage. The shared handoff surface
-is the `docs/` folder (specs with a Status field), consistent with how these
-agents already coordinate.
+You orchestrate the MECHANICAL stages only: implement, test, review. The human
+stages before this (designing the Figma frames and discussing/writing the spec)
+are done interactively with the user and are NOT your job. You start only after
+the user has approved the spec.
 
-## Preconditions
-- The design phase is complete (see the `design-generation` skill). Frames exist
-  in Figma and their node-ids are recorded (in the relevant `docs/features/*.md`
-  spec or a `.workflow/manifest.json`, whichever the design phase used).
-- The Figma MCP is connected so the developer can read frames.
+## Preconditions (verify before doing anything)
+- A feature spec exists in `docs/features/` for `$ARGUMENTS`, with Status set to
+  approved/`In Development`, and it contains the Figma frame node-ids (recorded
+  by the main session during design).
+- The Figma MCP is connected (the developer reads frames for fidelity).
 
-> KNOWN GAP (fix later): `senior-developer` currently has no Figma read tool in
-> its `tools` list. To let it implement directly from a frame, add
-> `mcp__figma__get_design_context` to that agent. Until then, the
-> `product-docs-manager` captures the frame into a spec and the developer builds
-> from the spec.
+If the spec is missing, not approved, or has no node-ids: STOP and tell the user.
+Do NOT guess or invent a spec. Do NOT design or write the spec yourself.
 
 ## Sequence
 
-1. **Spec.** Dispatch `product-docs-manager` to read the frame(s) for
-   `$ARGUMENTS` and produce/refresh the feature spec in `docs/features/`, with
-   acceptance criteria. Set the spec Status to `In Development` when ready.
+1. **Implement.** Dispatch `senior-developer` to build the page(s) from the spec.
+   It reads the frame(s) via the Figma MCP using the node-ids in the spec for
+   visual fidelity, and follows project conventions (App Router, TypeScript,
+   SASS modules, design system: #0055FF, #0A0F1C, Sora + JetBrains Mono).
+   It reports the files created/modified.
 
-2. **Implement.** Dispatch `senior-developer` to build the page(s) from the spec,
-   following project conventions (App Router, TypeScript, SASS modules,
-   design system: #0055FF, #0A0F1C, Sora + JetBrains Mono). It reports the files
-   created/modified.
-
-3. **Test.** Dispatch `qa-engineer` to write and run tests against the spec's
+2. **Test.** Dispatch `qa-engineer` to write and run tests against the spec's
    acceptance criteria and the implementation. If tests fail, route the failures
    back to `senior-developer`, then re-run `qa-engineer`. Loop until green
    (cap 3 attempts, then surface to the user).
 
-4. **Review.** Dispatch `code-reviewer` as the final gate — it reviews against
-   the spec and conventions with tests already green. On critical/blocking
-   findings, route back to `senior-developer` and re-run from step 3.
+3. **Review.** Dispatch `code-reviewer` as the final gate — reviews against the
+   spec and conventions with tests already green. On critical/blocking findings,
+   route back to `senior-developer` and re-run from step 2.
 
-5. **Done.** When the review passes, mark the spec Status `Complete` and give the
+4. **Done.** When the review passes, mark the spec Status `Complete` and give the
    user a one-line summary: pages built, test results, review outcome.
 
 ## Rules
-- Never skip a gate. A stage starts only when the prior stage's output says so.
-- Pass concrete pointers between stages via `docs/` (spec path, node-ids,
-  file paths, failure notes) — don't assume one agent sees another's context.
+- Never skip a gate. Each stage starts only when the prior one's output allows.
+- Every agent must describe any permission-requiring action before doing it
+  (per global rules). Never run agents in bypass-permissions mode.
+- Hand off concrete pointers via `docs/` and the spec (node-ids, file paths,
+  failure notes) — don't assume one agent sees another's context.
 - One line per stage transition. No play-by-play.

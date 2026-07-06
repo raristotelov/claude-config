@@ -22,6 +22,11 @@
 
 ## Agent Team Configuration
 
+### Design-to-page workflow
+- When designing Figma frames, the main session (not an agent) records each frame's node-id into the relevant `docs/features/` spec as frames are created.
+- The docs-manager writes formal specs only when the user explicitly asks ("write this up as documentation") — never auto-invoked to invent a spec.
+- The automated build pipeline (`/design-to-page`: developer → qa → reviewer) runs only after the user approves the spec. Never start it on a guess or an unapproved spec.
+
 When working with agent teams, use these role definitions:
 
 - **Senior Developer**: Implements features based on specs in docs/features/. Follows component folder convention (.tsx, .module.scss, .test.tsx, index.ts). Uses SASS modules, strict TypeScript. Does NOT write tests. Before every tool call that requires permission, provide a short clear description of what the action does and why.
