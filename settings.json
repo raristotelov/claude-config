@@ -2,6 +2,12 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx tsc --noEmit *)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -130,8 +136,12 @@
       }
     ]
   },
-		"mcpServers": {
-  	"figma": { "type": "http", "url": "https://mcp.figma.com/mcp" }
-	},
-  "teammateMode": "tmux"
+  "teammateMode": "tmux",
+  "agentPushNotifEnabled": true,
+  "mcpServers": {
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    }
+  }
 }
