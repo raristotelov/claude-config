@@ -1,4 +1,5 @@
 {
+  "outputStyle": "Terse",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
@@ -17,6 +18,16 @@
             "type": "command",
             "command": "__CLAUDE_HOME__/hooks/peon-ping/peon.sh",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "# assistant-console voice app: when its terminal sets ASSISTANT_CONSOLE_SESSION_FILE, write this session's transcript path there so the app can read Claude's replies aloud\nif [ -n \"$ASSISTANT_CONSOLE_SESSION_FILE\" ]; then jq -r .transcript_path > \"$ASSISTANT_CONSOLE_SESSION_FILE\"; fi",
+            "timeout": 5
           }
         ]
       }
