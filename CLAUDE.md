@@ -30,6 +30,7 @@
 - **NEVER silence a linter. No `eslint-disable`, `eslint-disable-next-line`, `eslint-disable-line`, `@ts-ignore`, `@ts-expect-error`, `prettier-ignore`, `istanbul ignore`, or any equivalent suppression, in any language or tool.** A lint error means either the code is wrong or the rule is wrong. Fix the code. If the rule itself is genuinely wrong for this project, STOP and discuss it with the user, then change the rule in the config so it applies everywhere — never suppress it at the call site. Suppressions hide the problem, spread by example, and turn the linter into decoration.
 - **NEVER add a code comment without asking the user first and getting an explicit yes.** Default to no comments at all, in any language. The only candidate for a comment is something genuinely off that a reader could not otherwise understand — never a justification for a value, a section header, a TODO, or a restatement of the line below. When you believe a comment is warranted: STOP, describe what you want to write and why, and wait for the green light. Writing it and mentioning it afterwards is a violation. If code seems to need a comment, first make the code clearer instead — better names, an extracted function or constant. Reasoning about why a value was chosen belongs in the ticket, the design file, or the docs, not the source. An existing comment in a file is never licence to add more.
 - **Before starting ANY new project, the very first task is defining the linter and Prettier rules** — the configs, the `lint` and `format` scripts, and confirming the two agree with each other. This happens before any feature work, in every package. Invoke the **lint-and-format** skill to do it; it covers the division of responsibility, the rules that must mirror Prettier options, and how to verify the two do not contradict each other. Never begin feature work on a project whose lint and format setup is not settled.
+- **Remind the user to commit when a part of the work stands on its own.** They commit as work progresses, not once at the end. The trigger is not how many files changed — it is that a piece is finished: it does what it set out to do, it builds, and the checks that cover it pass. When you reach such a point, end the message with a single line suggesting a commit and what it covers. Nothing more — no breakdown, no staging plan, and never run `git commit` unless told to.
 
 ## Agent Team Configuration
 
@@ -80,3 +81,33 @@ Go to the repo, create the task, and put it on the board in Todo. All three step
    - `gh project item-edit 2 --owner @me --url <issue-url> --field "Status" --value "Done"`
    - `gh issue close <n> -R raristotelov/social-media-app`
 4. Verify every move by reading the state back — these commands print nothing on success.
+
+## LOVB (project-specific)
+
+Repo `lovb-payload` (Payload CMS + Next.js). Tickets live in Jira project **LOVBS** (`https://teacodeio.atlassian.net/browse/LOVBS-<n>`) — read the ticket with the Atlassian MCP before starting.
+
+### Formatting and linting
+
+**NEVER run `pnpm format` or `pnpm lint`.** Both are repo-wide (`oxfmt .` / `oxlint .`) and the repo is not format-clean, so a single run rewrites dozens of files unrelated to the ticket and buries the real change.
+
+Always run the tools **per file**, on the files you actually edited:
+
+- `npx oxfmt <path> [<path>...]`
+- `npx oxlint <path> [<path>...]`
+
+Afterwards check `git status --short` and confirm only your intended files appear.
+
+### Creating a worktree
+
+When asked to create a worktree for a LOVBS ticket, **always run the full setup** from the repo's `docs/worktree-isolated-db.md` — the request implies every step, no separate go-ahead needed:
+
+1. Create the worktree at `.claude/worktrees/<name>` on branch `worktree-<name>`, naming it after the ticket (e.g. `LOVBS-756-team-grid-branding`).
+2. Symlink the non-DB secrets from the main checkout: `ln -s ../../../.env .env`.
+3. Create the isolated database and point the shell at it: `export POSTGRES_URL="$(scripts/worktree-db.sh create)"`.
+4. `pnpm install`
+5. `pnpm payload migrate`
+6. `pnpm seed`
+
+Report which steps succeeded. The `POSTGRES_URL` export only lives in the shell that set it — tell the user to re-export it in any terminal they open for that worktree.
+
+Tear down with `scripts/worktree-db.sh drop` before removing the worktree, so dead `wt_*` databases do not accumulate.

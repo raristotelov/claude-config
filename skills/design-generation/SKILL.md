@@ -27,6 +27,7 @@ the non-conversational stages that come after.
 - Within a section, the base view first and its **states stacked vertically** beneath it (empty state, other-user, popups, scrolled…).
 - Use the same section names and the same left-to-right order on every breakpoint page, so the pages mirror each other.
 - Keep spacing uniform: 200px between frames in a column, 400px between sections, 80px section padding.
+- Set every page canvas background and every section fill to **#1e1e1e** — that is the background we use. Figma defaults each new section to white and each page to #F5F5F5; both are wrong, so set them explicitly.
 - Name frames by view and state — `Profile View – Other User`, `Feed View – Comments`. Suffix the breakpoint where it isn't the page default.
 - Components live on the Components page, never among the screens.
 
