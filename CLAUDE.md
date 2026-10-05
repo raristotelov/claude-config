@@ -86,6 +86,20 @@ Go to the repo, create the task, and put it on the board in Todo. All three step
 
 Repo `lovb-payload` (Payload CMS + Next.js). Tickets live in Jira project **LOVBS** (`https://teacodeio.atlassian.net/browse/LOVBS-<n>`) — read the ticket with the Atlassian MCP before starting.
 
+### Designs (exception to the global design-to-page rule)
+
+**This exception applies to `lovb-payload` only.** The designs belong to the project's designers — never edit, create or update Figma frames for this project. Read them only. The global "design is fixed before the code" order does not apply here: when the user decides an implementation that differs from the Figma file (e.g. dropping an element), build what the user decided without touching the design, and do not propose updating the frames.
+
+### Code comments (exception to the global no-comments rule)
+
+**This exception applies to `lovb-payload` only.** In this repo you may write comments without asking first, where the project already treats them as convention:
+
+- **Migrations** — every file in `src/migrations` carries a header explaining what it changes and why; write one for each migration you add.
+- **Anywhere else the surrounding code establishes the convention** — collections, hooks, access helpers and blocks in this repo commonly carry explanatory headers. Match what the neighbouring files do.
+- **Keep comment coverage consistent with the rest of the codebase** — when similar code elsewhere in the repo carries a comment (a header on a component, a note on why a branch exists, a ticket reference on a behaviour), add the equivalent comment to your change too, so new code is documented to the same level as its neighbours.
+
+The rest of the global rule still holds: no TODOs, no section headers, no restating the line below, and no comment in a file whose neighbours have none.
+
 ### Formatting and linting
 
 **NEVER run `pnpm format` or `pnpm lint`.** Both are repo-wide (`oxfmt .` / `oxlint .`) and the repo is not format-clean, so a single run rewrites dozens of files unrelated to the ticket and buries the real change.
@@ -101,13 +115,15 @@ Afterwards check `git status --short` and confirm only your intended files appea
 
 When asked to create a worktree for a LOVBS ticket, **always run the full setup** from the repo's `docs/worktree-isolated-db.md` — the request implies every step, no separate go-ahead needed:
 
-1. Create the worktree at `.claude/worktrees/<name>` on branch `worktree-<name>`, naming it after the ticket (e.g. `LOVBS-756-team-grid-branding`).
+1. Create the worktree at `.claude/worktrees/worktree-<name>` on branch `worktree-<name>`, naming it after the ticket (e.g. `worktree-LOVBS-756-team-grid-branding`).
 2. Symlink the non-DB secrets from the main checkout: `ln -s ../../../.env .env`.
 3. Create the isolated database and point the shell at it: `export POSTGRES_URL="$(scripts/worktree-db.sh create)"`.
 4. `pnpm install`
 5. `pnpm payload migrate`
 6. `pnpm seed`
 
-Report which steps succeeded. The `POSTGRES_URL` export only lives in the shell that set it — tell the user to re-export it in any terminal they open for that worktree.
+**Step 5 on a fresh database fails** at `20260819_142123_add_prevent_insider_popup_remaining_pages`, which alters `_website_settings_v` even though that table is only created later, by `20260828_113620_website_settings_versioning`. Existing databases were migrated before the offending lines were appended, so only new worktree databases hit it. If the run still fails this way, fix it before continuing — no separate go-ahead needed: move the `website_settings` and `_website_settings_v` statements out of the `20260819` file (from both `up()` and `down()`, and drop the stale comment paragraph that explains them) into a new migration dated after `20260828`, registered at the end of `src/migrations/index.ts`, keeping `ADD COLUMN IF NOT EXISTS` / `DROP COLUMN IF EXISTS` so already-migrated databases no-op. Then re-run step 5. Once that fix is merged to `main` this is a no-op — do not re-apply it.
+
+Report which steps succeeded. The `POSTGRES_URL` export only lives in the shell that set it, so end the report by telling the user to run `export POSTGRES_URL="$(scripts/worktree-db.sh url)"` in every new terminal they open for that worktree, before `pnpm dev`, `payload migrate`, `pnpm seed` or the tests — without it those commands silently use the shared `postgres` database instead of the worktree's.
 
 Tear down with `scripts/worktree-db.sh drop` before removing the worktree, so dead `wt_*` databases do not accumulate.
